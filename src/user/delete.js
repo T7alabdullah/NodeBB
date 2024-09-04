@@ -16,6 +16,7 @@ const plugins = require('../plugins');
 const batch = require('../batch');
 
 async function updateCount(uids, name, fieldName) {
+	console.log('Talal: Starting updateCount function');
 	await batch.processArray(uids, async (uids) => {
 		const counts = await db.sortedSetsCard(uids.map(uid => name + uid));
 		const bulkSet = counts.map(
@@ -25,6 +26,7 @@ async function updateCount(uids, name, fieldName) {
 	}, {
 		batch: 500,
 	});
+	console.log('Talal: Finished updateCount function');
 }
 
 
