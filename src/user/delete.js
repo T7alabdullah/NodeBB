@@ -15,6 +15,19 @@ const messaging = require('../messaging');
 const plugins = require('../plugins');
 const batch = require('../batch');
 
+async function updateCount(uids, name, fieldName) {
+	await batch.processArray(uids, async (uids) => {
+		const counts = await db.sortedSetsCard(uids.map(uid => name + uid));
+		const bulkSet = counts.map(
+			(count, index) => ([`user:${uids[index]}`, { [fieldName]: count || 0 }])
+		);
+		await db.setObjectBulk(bulkSet);
+	}, {
+		batch: 500,
+	});
+}
+
+
 module.exports = function (User) {
 	const deletesInProgress = {};
 
@@ -208,17 +221,6 @@ module.exports = function (User) {
 			db.getSortedSetRange(`following:${uid}`, 0, -1),
 		]);
 
-		async function updateCount(uids, name, fieldName) {
-			await batch.processArray(uids, async (uids) => {
-				const counts = await db.sortedSetsCard(uids.map(uid => name + uid));
-				const bulkSet = counts.map(
-					(count, index) => ([`user:${uids[index]}`, { [fieldName]: count || 0 }])
-				);
-				await db.setObjectBulk(bulkSet);
-			}, {
-				batch: 500,
-			});
-		}
 
 		const followingSets = followers.map(uid => `following:${uid}`);
 		const followerSets = following.map(uid => `followers:${uid}`);
